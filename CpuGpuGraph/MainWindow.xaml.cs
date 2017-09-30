@@ -46,6 +46,9 @@ namespace CpuGpuGraph
         // init list for gpu data
         public List<int> GpuHist = new List<int>();
 
+        // init list for gpu data
+        public List<int> GpuMemHist = new List<int>();
+
         // init list for ping data
         public List<int> PingHist = new List<int>();
 
@@ -76,16 +79,20 @@ namespace CpuGpuGraph
         // Graph
         PathGeometry pathGeoCpu = new PathGeometry();
         PathGeometry pathGeoGpu = new PathGeometry();
+        PathGeometry pathGeoGpuMem = new PathGeometry();
         PathGeometry pathGeoPing = new PathGeometry();
         PathFigure pathFigCpu = new PathFigure();
         PathFigure pathFigGpu = new PathFigure();
+        PathFigure pathFigGpuMem = new PathFigure();
         PathFigure pathFigPing = new PathFigure();
         //Path path = new Path(); // path styling in xaml
         int CanvasWidthCpu = new int();
         int CanvasWidthGpu = new int();
+        int CanvasWidthGpuMem = new int();
         int CanvasWidthPing = new int();
         int CanvasHeightCpu = new int();
         int CanvasHeightGpu = new int();
+        int CanvasHeightGpuMem = new int();
         int CanvasHeightPing = new int();
 
         // Ping instance
@@ -94,33 +101,30 @@ namespace CpuGpuGraph
         // Main Window
         public MainWindow()
         {
-            // set saved position
-            // disabled since I have no working check for changed display arrangement
-/*            this.Top = Properties.Settings.Default.Top;
-            this.Left = Properties.Settings.Default.Left;
-            this.Height = Properties.Settings.Default.Height;
-            this.Width = Properties.Settings.Default.Width;
-
-            if (Properties.Settings.Default.Maximized)
-            {
-                WindowState = WindowState.Maximized;
-            }
-            MoveIntoView();*/
-
+            NvGpuLoad.nvInit();
             InitializeComponent();
-            //GetGpuLoad();
         }
 
-        // Handle error loading nvGpuLoad_x86.dll (e.g. missing Microsoft Visual C++ 2015 Redistributable  (x86) or missing dll)
         class NvGpuLoad
         {
-            // dll with code from http://eliang.blogspot.de/2011/05/getting-nvidia-gpu-usage-in-c.html
+            [DllImport("nvGpuLoad_x86.dll")]
+            public static extern void nvInit();
+
             [DllImport("nvGpuLoad_x86.dll")]
             public static extern int getGpuLoad();
             internal static int GetGpuLoad()
             {
                 int a = new int();
                 a = getGpuLoad();
+                return a;
+            }
+
+            [DllImport("nvGpuLoad_x86.dll")]
+            public static extern int getGpuMemLoad();
+            internal static int GetGpuMemLoad()
+            {
+                int a = new int();
+                a = getGpuMemLoad();
                 return a;
             }
         }
@@ -137,7 +141,18 @@ namespace CpuGpuGraph
             }
         }
 
-
+        public int GetGpuMemLoad()
+        {
+            try
+            {
+                return NvGpuLoad.getGpuMemLoad();
+            }
+            catch (DllNotFoundException e)
+            {
+                return 0;
+            }
+        }
+        
 
         //Property change notifier
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -161,10 +176,11 @@ namespace CpuGpuGraph
         {
             InitCpu();
             InitGpu();
+            InitGpuMem();
             InitPing();
 
             // start refresh timer
-            Timer.Interval = TimeSpan.FromSeconds(1 / RefreshRate);
+            Timer.Interval = TimeSpan.FromSeconds(0.25);
             Timer.IsEnabled = true;
             Timer.Start();
             // start ping timer
@@ -207,6 +223,63 @@ namespace CpuGpuGraph
 
             // add update to timer
             Timer.Tick += UpdateGpuGraph;
+        }
+
+        private void InitGpuMem()
+        {
+            CanvasWidthGpuMem = (int)GpuMemGraphCanvas.ActualWidth;
+            CanvasHeightGpuMem = (int)GpuMemGraphCanvas.ActualHeight;
+            DataPoints = CanvasWidthGpuMem / 2;
+
+            // init gpu hist list with zeros
+            for (int i = 0; i <= DataPoints; i++)
+            {
+                GpuMemHist.Add(CanvasHeightGpuMem);
+            }
+            // init graph
+            pathGeoGpuMem.FillRule = FillRule.Nonzero;
+            pathFigGpuMem.StartPoint = new Point(-10, CanvasHeightGpuMem);
+            pathFigGpuMem.Segments = new PathSegmentCollection();
+            pathGeoGpuMem.Figures.Add(pathFigGpuMem);
+
+            double t = 0;
+            foreach (int val in GpuMemHist)
+            {
+                LineSegment lineSegment = new LineSegment();
+                lineSegment.Point = new Point((int)t, val);
+                pathFigGpuMem.Segments.Add(lineSegment);
+                t += (double)CanvasWidthGpuMem / DataPoints;
+            }
+            // closing graph
+            LineSegment lineSegmentEnd = new LineSegment();
+            lineSegmentEnd.Point = new Point(CanvasWidthGpuMem + 10, CanvasHeightGpuMem);
+            pathFigGpuMem.Segments.Add(lineSegmentEnd);
+
+            GpuMemGraph.Data = pathGeoGpuMem;
+
+            // add update to timer
+            Timer.Tick += UpdateGpuMemGraph;
+        }
+
+        private void UpdateGpuMemGraph(object sender, EventArgs e)
+        {
+            int gpuMemLoadValue = GetGpuMemLoad();
+            GpuMemHist.RemoveAt(0);
+            GpuMemHist.Add(CanvasHeightGpuMem / 100 * gpuMemLoadValue);
+
+            double t = 0;
+            pathFigGpuMem.Segments.Clear();
+            foreach (int val in GpuMemHist)
+            {
+                LineSegment lineSegment = new LineSegment();
+                lineSegment.Point = new Point((int)t, val);
+                pathFigGpuMem.Segments.Add(lineSegment);
+                t += (double)CanvasWidthGpuMem / DataPoints;
+            }
+            // closing graph
+            LineSegment lineSegmentEnd = new LineSegment();
+            lineSegmentEnd.Point = new Point(CanvasWidthGpuMem + 10, CanvasHeightGpuMem);
+            pathFigGpuMem.Segments.Add(lineSegmentEnd);
         }
 
         private void UpdateGpuGraph(object sender, EventArgs e)
@@ -563,21 +636,7 @@ namespace CpuGpuGraph
 
         private void OnLocationChange(object sender, EventArgs e)
         {
-
-/*            Console.WriteLine("VirtualScreenTop: {0}", System.Windows.SystemParameters.VirtualScreenTop);
-            Console.WriteLine("VirtualScreenLeft: {0}", System.Windows.SystemParameters.VirtualScreenLeft);
-            Console.WriteLine("VirtualScreenWidth: {0}", System.Windows.SystemParameters.VirtualScreenWidth);
-            Console.WriteLine("VirtualScreenHeight: {0}", System.Windows.SystemParameters.VirtualScreenHeight);
-            Console.WriteLine("PrimaryScreenWidth: {0}", System.Windows.SystemParameters.PrimaryScreenWidth);
-            Console.WriteLine("PrimaryScreenHeight: {0}", System.Windows.SystemParameters.PrimaryScreenHeight);
-            Console.WriteLine("Top: {0}", this.Top);
-            Console.WriteLine("Left: {0}", this.Left);
-            Console.WriteLine("Height: {0}", this.Height);
-            Console.WriteLine("Width: {0}", this.Width);*/
         }
-
-
-
 
     }
 }

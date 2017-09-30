@@ -18,5 +18,3 @@ public:
 };
 
 extern NVGPULOAD_API int nnvGpuLoad;
-
-NVGPULOAD_API int fnnvGpuLoad(void);

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:CpuGpuGraph"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="CpuGpuGraph" Height="200" Width="525"
+        Title="CpuGpuGraph" Height="262.447" Width="582.769"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="13"
@@ -18,15 +18,8 @@
         AllowsTransparency="True"
         Loaded="Window_Loaded"
         Closing="Window_Closing">
-        <!--
-        Background="#FF383838"
-        ResizeMode="NoResize"
-        ResizeMode="CanResizeWithGrip"
-        ShowInTaskbar="False"
-        Closed="Window_Closed"
-        LocationChanged="OnLocationChange">-->
 
-    <Grid>
+    <Grid Margin="0,0,0,0">
         <!--Glowing Boarder-->
         <Border Name="FrameAccent" Margin="6" BorderBrush="DodgerBlue"  BorderThickness="1"/>
         <Border Name="FrameBlur" Margin="6" BorderBrush="DodgerBlue"  BorderThickness="1">
@@ -34,8 +27,8 @@
                 <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
             </Border.Effect>
         </Border>
-        <Rectangle Margin="7" Fill="#FF383838"></Rectangle>
-        
+        <Rectangle Margin="7,7,7,7" Fill="#FF383838" HorizontalAlignment="Left" Width="586"/>
+
         <!--Windows Content-->
         <Grid Margin="6" VerticalAlignment="Top">
 
@@ -56,7 +49,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!--Rectangle to drag window-->
-                <TextBlock Grid.Column="0" Margin="25 0 0 0" VerticalAlignment="Center">CpuGpuGraph</TextBlock>
+                <TextBlock Grid.Column="0" Margin="25 0 0 0" VerticalAlignment="Center">Graphics Monitor</TextBlock>
                 <materialDesign:PackIcon Grid.Column="0" Kind="ChartLine" Margin="6 0 0 0" VerticalAlignment="Center"/>
                 <Rectangle Grid.Column="0" Height="27" Name="Rectangle1" VerticalAlignment="Top" MouseLeftButtonDown="rectangle1_MouseDown">
                     <Rectangle.Fill>
@@ -105,7 +98,9 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="159" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="159" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="159" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" VerticalAlignment="Center" Height="14">CPU</TextBlock>
                 <Canvas Grid.Column="1" HorizontalAlignment="Left" Margin="8 0 0 0" Width="12" Height="12">
@@ -114,10 +109,12 @@
                 <!--<materialDesign:PackIcon Grid.Column="1" Kind="Console"  Margin="6 0 0 0" VerticalAlignment="Center"/>-->
                 <TextBlock Grid.Column="2" VerticalAlignment="Center" Height="14">GPU</TextBlock>
                 <materialDesign:PackIcon Grid.Column="3" Kind="Codepen" Margin="6 0 0 0" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="4" VerticalAlignment="Center" Height="14">GPU Memory</TextBlock>
+                <materialDesign:PackIcon Grid.Column="5" Kind="Codepen" Margin="6 0 0 0" VerticalAlignment="Center"/>
             </Grid>
 
             <!--Graphs-->
-            <Grid Grid.Row="2">
+            <Grid Grid.Row="2" Margin="0,0,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
@@ -139,7 +136,7 @@
                     </Path>
                 </Canvas>
 
-                <!--CPU Graph-->
+                <!--GPU Graph-->
                 <Canvas Grid.Column="1" Name="GpuGraphCanvas" Background="#282828" Width="150" Height="100" Margin="16 0 16 0"
                         VerticalAlignment="Center" HorizontalAlignment="Left" ClipToBounds="True">
                     <Path Name="GpuGraph" Stroke="AliceBlue" Fill="#717171" StrokeThickness="1">
@@ -154,6 +151,20 @@
                     </Path>
                 </Canvas>
 
+                <!--GPU Mem Graph-->
+                <Canvas Grid.Column="3" Name="GpuMemGraphCanvas" Background="#282828" Width="150" Height="100" Margin="16 0 16 0"
+                        VerticalAlignment="Center" HorizontalAlignment="Left" ClipToBounds="True">
+                    <Path Name="GpuMemGraph" Stroke="AliceBlue" Fill="#717171" StrokeThickness="1">
+                        <Path.Data>
+                            <PathGeometry Figures="M0,100 10,20 20,50 30,35 40,80 50,60 60,40 70,30 80,45 90,80 100,65 100,100" />
+                        </Path.Data>
+                    </Path>
+                    <Path Name="GpuMemGraphBlur" Stroke="AliceBlue" StrokeThickness="1" Data="{Binding Path=Data, ElementName=GpuMemGraph}">
+                        <Path.Effect>
+                            <BlurEffect Radius="4"/>
+                        </Path.Effect>
+                    </Path>
+                </Canvas>
                 <!--Parameters-->
                 <Grid Grid.Column="2">
                     <Grid.RowDefinitions>
@@ -168,8 +179,40 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"  VerticalAlignment="Center">Update rate [s]:</TextBlock>
-                        <ComboBox Name="ComboBoxUpdateRate" Grid.Column="1" Margin="5 0 0 0" Padding="0 2 0 0" VerticalAlignment="Center"  IsEditable="False" SelectedIndex="2" 
+                    </Grid>
+                    <CheckBox Name="CheckBoxGlow" Grid.Row="3" Style="{StaticResource MaterialDesignCheckBox}" Margin="0,123,0,-109" VerticalAlignment="Center"
+                              IsChecked="True" IsEnabled="True" Click="ToggleGlow_Click">
+                        CPU load glow
+                    </CheckBox>
+                    <!--<Button Name="Button_test" Grid.Row="2" Width="100" Height="24" HorizontalAlignment="Left" Click="Button_test_OnClick">test</Button>-->
+                    <Grid Grid.Row="3" Margin="-342,115,342,-119">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="29*" />
+                            <ColumnDefinition Width="7*"/>
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <!--<TextBlock Grid.Column="0"  VerticalAlignment="Center">Ping [ms]:</TextBlock>-->
+                        <CheckBox Name="CheckBoxPing" Style="{StaticResource MaterialDesignCheckBox}" Margin="0,0,0,14" VerticalAlignment="Bottom"
+                              IsChecked="True" IsEnabled="True" Click="TogglePing_Click" Grid.ColumnSpan="2">
+                            Ping [ms]:
+                        </CheckBox>
+                        <Label x:Name="PingTime" Content="--" VerticalAlignment="Center" Margin="85,8,19,4" />
+                        <Canvas Name="PingGraphCanvas" Height="24" Margin="0,42,5,-21"
+                        VerticalAlignment="Center" ClipToBounds="True">
+                            <Path Name="PingGraph" Stroke="MediumOrchid" StrokeThickness="1">
+                                <Path.Data>
+                                    <PathGeometry Figures="M0,15 10,9 20,20 30,12 40,17 50,16 60,5 70,6 80,18 90,5 100,12 110,7 120,19" />
+                                </Path.Data>
+                            </Path>
+                            <Path Name="PingGraphBlur" Stroke="MediumOrchid"  StrokeThickness="1" Data="{Binding Path=Data, ElementName=PingGraph}">
+                                <Path.Effect>
+                                    <BlurEffect Radius="4"/>
+                                </Path.Effect>
+                            </Path>
+                        </Canvas>
+
+                        <TextBlock Grid.Column="2"  VerticalAlignment="Center" Margin="0,14,-68,10">Update rate [s]:</TextBlock>
+                        <ComboBox Name="ComboBoxUpdateRate" Grid.Column="2" Margin="103,12,-136,11" Padding="0 2 0 0" VerticalAlignment="Center"  IsEditable="False" SelectedIndex="1" 
                                   SelectionChanged="ComboBoxUpdateRate_OnSelectionChanged">
                             <ComboBoxItem>0.1</ComboBoxItem>
                             <ComboBoxItem>0.2</ComboBoxItem>
@@ -180,44 +223,9 @@
                             <ComboBoxItem>10</ComboBoxItem>
                         </ComboBox>
                     </Grid>
-                    <CheckBox Name="CheckBoxGlow" Grid.Row="1" Style="{StaticResource MaterialDesignCheckBox}" Margin="0 5" VerticalAlignment="Center"
-                              IsChecked="True" IsEnabled="True" Click="ToggleGlow_Click">
-                        CPU load glow
-                    </CheckBox>
-                    <!--<Button Name="Button_test" Grid.Row="2" Width="100" Height="24" HorizontalAlignment="Left" Click="Button_test_OnClick">test</Button>-->
-                    <Grid Grid.Row="2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <!--<TextBlock Grid.Column="0"  VerticalAlignment="Center">Ping [ms]:</TextBlock>-->
-                        <CheckBox Name="CheckBoxPing" Grid.Row="1" Style="{StaticResource MaterialDesignCheckBox}" Margin="0 5" VerticalAlignment="Center"
-                              IsChecked="True" IsEnabled="True" Click="TogglePing_Click">
-                            Ping [ms]:
-                        </CheckBox>
-                        <Label x:Name="PingTime" Grid.Column="1" Content="--" VerticalAlignment="Center" />
-                    </Grid>
                     <!--Ping Graph-->
-                    <Canvas Grid.Row="3" Name="PingGraphCanvas" Width="126" Height="24" Margin="0 0 0 0"
-                        VerticalAlignment="Center" HorizontalAlignment="Left" ClipToBounds="True">
-                        <Path Name="PingGraph" Stroke="MediumOrchid" StrokeThickness="1">
-                            <Path.Data>
-                                <PathGeometry Figures="M0,15 10,9 20,20 30,12 40,17 50,16 60,5 70,6 80,18 90,5 100,12 110,7 120,19" />
-                            </Path.Data>
-                        </Path>
-                        <Path Name="PingGraphBlur" Stroke="MediumOrchid"  StrokeThickness="1" Data="{Binding Path=Data, ElementName=PingGraph}">
-                            <Path.Effect>
-                                <BlurEffect Radius="4"/>
-                            </Path.Effect>
-                        </Path>
-                    </Canvas>
+
                 </Grid>
-            </Grid>
-            <Grid Grid.Row="3" Margin="4 0 0 2"  Height="{Binding ActualHeight, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Grid}}}"
-                  VerticalAlignment="Bottom">
-                <TextBlock FontSize="11" Opacity="0.3" Margin="15 0 0 0" VerticalAlignment="Bottom">Only compatible with Nvidia GPUs</TextBlock>
-                <TextBlock FontSize="11" Opacity="0.3"  Margin="0 0 4 0" VerticalAlignment="Bottom" HorizontalAlignment="Right">v1.0.5</TextBlock>
-                <materialDesign:PackIcon Opacity="0.3" Margin="0 0 0 1" Width="12" Height="12" Kind="Alert" VerticalAlignment="Bottom"/>
             </Grid>
         </Grid>
     </Grid>
